@@ -10,10 +10,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -56,13 +53,13 @@ public class CourseCategoryServiceImpl extends ServiceImpl<CourseCategoryMapper,
         }).map((menu) -> {
             CourseCategoryTreeDto courseCategoryTreeDto = new CourseCategoryTreeDto();
             BeanUtils.copyProperties(menu, courseCategoryTreeDto);
-            if (menu.getIsLeaf().equals("1")){
+            if (menu.getIsLeaf().equals(1)){
                 courseCategoryTreeDto.setChildrenTreeNodes(null);
             }else {
                 courseCategoryTreeDto.setChildrenTreeNodes(findChildrenTreeNodes(menu,allCourseCategory));
             }
             return courseCategoryTreeDto;
-        }).collect(Collectors.toList());
+        }).sorted(Comparator.comparingInt(CourseCategory::getOrderby)).collect(Collectors.toList());
         return collect;
     }
 
@@ -77,14 +74,14 @@ public class CourseCategoryServiceImpl extends ServiceImpl<CourseCategoryMapper,
         ).map(courseCategory -> {
             CourseCategoryTreeDto courseCategoryTreeDto = new CourseCategoryTreeDto();
             BeanUtils.copyProperties(courseCategory, courseCategoryTreeDto);
-            if (courseCategory.getIsLeaf().equals("1")){
+            if (courseCategory.getIsLeaf().equals(1)){
                 courseCategoryTreeDto.setChildrenTreeNodes(null);
             }else {
                 courseCategoryTreeDto.setChildrenTreeNodes(findChildrenTreeNodes(courseCategory,allCourseCategory));
             }
             return courseCategoryTreeDto;
 
-        }).collect(Collectors.toList());
+        }).sorted(Comparator.comparingInt(CourseCategory::getOrderby)).collect(Collectors.toList());
         return  collect;
     }
 }
