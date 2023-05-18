@@ -2,6 +2,7 @@ package com.xuecheng.content.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.xuecheng.base.execption.RestErrorResponse;
 import com.xuecheng.base.execption.XueChengException;
 import com.xuecheng.content.mapper.TeachplanMapper;
 import com.xuecheng.content.mapper.TeachplanMediaMapper;
@@ -81,6 +82,48 @@ public class TeachplanServiceImpl extends ServiceImpl<TeachplanMapper,Teachplan>
             teachplanMapper.insert(teachplan);
         }
 
+    }
+
+    @Override
+    public RestErrorResponse deleteTeachplanById(Long teachplanId) {
+        Teachplan teachplan = teachplanMapper.selectById(teachplanId);
+        Long parentid = teachplan.getParentid();
+        if (parentid == 0){ //章节
+            //查询该章节下是否还有小节
+            int count = findChildCountByTeachplanId(teachplan.getId());
+            if (count!=0){
+                return new RestErrorResponse("课程计划信息还有子级信息，无法操作",120409);
+            }else {
+                teachplanMapper.deleteById(teachplan.getId());
+                return new RestErrorResponse(200);
+            }
+        }else {//小节
+            teachplanMapper.deleteById(teachplan.getId());
+            //删除关联的 teachplanMedia
+            deleteTeachplanMediaByTeachplanId(teachplanId);
+            return new RestErrorResponse(200);
+        }
+    }
+
+
+    /**
+     * 删除关联的 teachplanMedia
+     * @param teachplanId
+     */
+    private void deleteTeachplanMediaByTeachplanId(Long teachplanId) {
+        LambdaQueryWrapper<TeachplanMedia> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(TeachplanMedia::getTeachplanId,teachplanId);
+    }
+
+    /**
+     *  查询该章节下是否还有小节
+     * @param teachplanId
+     * @return
+     */
+    private int findChildCountByTeachplanId(Long teachplanId){
+        LambdaQueryWrapper<Teachplan> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Teachplan::getParentid,teachplanId);
+        return teachplanMapper.selectCount(queryWrapper);
     }
 
     /**

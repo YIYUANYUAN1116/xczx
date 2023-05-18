@@ -9,8 +9,19 @@ public class RestErrorResponse implements Serializable {
 
     private String errMessage;
 
+    private int errCode;
+
     public RestErrorResponse(String errMessage){
         this.errMessage= errMessage;
+    }
+
+    public RestErrorResponse(int errCode){
+        this.errCode= errCode;
+    }
+
+    public RestErrorResponse(String errMessage,int errCode){
+        this.errMessage= errMessage;
+        this.errCode = errCode;
     }
 
     public String getErrMessage() {
@@ -19,6 +30,14 @@ public class RestErrorResponse implements Serializable {
 
     public void setErrMessage(String errMessage) {
         this.errMessage = errMessage;
+    }
+
+    public int getErrCode() {
+        return errCode;
+    }
+
+    public void setErrCode(int errCode) {
+        this.errCode = errCode;
     }
 }
 
