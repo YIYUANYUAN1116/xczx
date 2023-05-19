@@ -5,20 +5,28 @@ server:
 #微服务配置
 spring:
   application:
-    name: content-api
-  datasource:
-    url: jdbc:mysql://123.60.189.149:3306/xc166_content?serverTimezone=UTC&userUnicode=true&useSSL=false&
-    username: root
-    password: yzd2021$$
-    driver-class-name: com.mysql.cj.jdbc.Driver
-# 日志文件配置路径
-logging:
-  config: classpath:log4j2-dev.xml
+    name: content-service
 
-swagger:
-  title: "学成在线内容管理系统"
-  description: "内容系统管理系统对课程相关信息进行管理"
-  base-package: com.xuecheng.content
-  enabled: true
-  version: 1.0.0
+  cloud:
+    nacos:
+      server-addr: 123.60.189.149:8848
+      discovery:
+        namespace: xc_dev
+        group: xuecheng-plus-project
+      config:
+        namespace: xc_dev
+        group: xuecheng-plus-project
+        file-extension: yaml
+        refresh-enabled: true
+        shared-configs:
+          - data-id: swagger-${spring.profiles.active}.yaml
+            group: xuecheng-plus-common
+            refresh: true
+          - data-id: logging-${spring.profiles.active}.yaml
+            group: xuecheng-plus-common
+            refresh: true
+
+  #profiles默认为dev
+  profiles:
+    active: xc_dev
 
