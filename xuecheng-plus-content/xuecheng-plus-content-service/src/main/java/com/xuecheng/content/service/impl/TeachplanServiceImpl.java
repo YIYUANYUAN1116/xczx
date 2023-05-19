@@ -2,10 +2,12 @@ package com.xuecheng.content.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.xuecheng.base.execption.CommonError;
 import com.xuecheng.base.execption.RestErrorResponse;
 import com.xuecheng.base.execption.XueChengException;
 import com.xuecheng.content.mapper.TeachplanMapper;
 import com.xuecheng.content.mapper.TeachplanMediaMapper;
+import com.xuecheng.content.model.common.MoveType;
 import com.xuecheng.content.model.dto.SaveTeachplanDto;
 import com.xuecheng.content.model.dto.TeachplanDto;
 import com.xuecheng.content.model.po.Teachplan;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -36,8 +39,8 @@ public class TeachplanServiceImpl extends ServiceImpl<TeachplanMapper,Teachplan>
         LambdaQueryWrapper<Teachplan> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Teachplan::getCourseId,courseId);
         List<Teachplan> teachplans = baseMapper.selectList(queryWrapper);
-        if (teachplans == null || teachplans.size()==0){
-            XueChengException.cast("课程计划不存在");
+        if (teachplans.isEmpty()){
+            return null;
         }
 
         List<TeachplanDto> collect = teachplans.stream().filter((teachplan -> {
@@ -51,7 +54,7 @@ public class TeachplanServiceImpl extends ServiceImpl<TeachplanMapper,Teachplan>
             }
             teachplanDto.setTeachPlanTreeNodes(findTeachplanChildrenTreeNodes(plan, teachplans));
             return teachplanDto;
-        }).collect(Collectors.toList());
+        }).sorted(Comparator.comparingInt(Teachplan::getOrderby)).collect(Collectors.toList());
         return collect;
     }
 
@@ -105,6 +108,49 @@ public class TeachplanServiceImpl extends ServiceImpl<TeachplanMapper,Teachplan>
         }
     }
 
+    /**
+     * 向上移动后和上边同级的课程计划交换位置，可以将两个课程计划的排序字段值进行交换。
+     * 向下移动后和下边同级的课程计划交换位置，可以将两个课程计划的排序字段值进行交换。
+     * @param teachplanId
+     * @param moveType
+     * @return
+     */
+    @Override
+    public RestErrorResponse moveTeachplanById(Long teachplanId, String moveType) {
+        if (teachplanId == null || moveType == null){
+            return new RestErrorResponse(CommonError.PARAMS_ERROR.getErrMessage());
+        }
+        Teachplan teachplan = teachplanMapper.selectById(teachplanId);
+        if (teachplan == null){
+            return new RestErrorResponse(CommonError.PARAMS_ERROR.getErrMessage());
+        }
+        Long parentid = teachplan.getParentid();
+        Integer orderby = teachplan.getOrderby();
+
+        //查询条件
+        LambdaQueryWrapper<Teachplan> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Teachplan::getCourseId,teachplan.getCourseId());
+        queryWrapper.eq(Teachplan::getParentid,teachplan.getParentid());
+        if (moveType.equals(MoveType.MOVE_UP.getMoveType())){
+            queryWrapper.eq(Teachplan::getOrderby,orderby-1);
+        }else {
+            queryWrapper.eq(Teachplan::getOrderby,orderby+1);
+        }
+
+        Teachplan swTeachplan = teachplanMapper.selectOne(queryWrapper);
+
+        if (swTeachplan == null){
+            return  new RestErrorResponse("已经是最底部或最顶部");
+        }else {
+            teachplan.setOrderby(swTeachplan.getOrderby());
+            swTeachplan.setOrderby(orderby);
+            teachplanMapper.updateById(teachplan);
+            teachplanMapper.updateById(swTeachplan);
+            return new RestErrorResponse("OK");
+        }
+
+    }
+
 
     /**
      * 删除关联的 teachplanMedia
@@ -151,7 +197,7 @@ public class TeachplanServiceImpl extends ServiceImpl<TeachplanMapper,Teachplan>
             }
             teachplanDto.setTeachPlanTreeNodes(findTeachplanChildrenTreeNodes(plan, teachplans));
             return teachplanDto;
-        }).collect(Collectors.toList());
+        }).sorted(Comparator.comparingInt(Teachplan::getOrderby)).collect(Collectors.toList());
         return collect;
     }
 

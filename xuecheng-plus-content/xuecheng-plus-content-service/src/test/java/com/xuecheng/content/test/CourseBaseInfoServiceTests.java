@@ -2,6 +2,7 @@ package com.xuecheng.content.test;
 
 import com.xuecheng.base.model.PageParams;
 import com.xuecheng.base.model.PageResult;
+import com.xuecheng.content.model.common.MoveType;
 import com.xuecheng.content.model.dto.QueryCourseParamsDto;
 import com.xuecheng.content.model.po.CourseBase;
 import com.xuecheng.content.service.CourseBaseInfoService;
@@ -31,6 +32,13 @@ class CourseBaseInfoServiceTests {
 
         PageResult<CourseBase> courseBasePageResult = courseBaseInfoService.queryCourseBaseList(pageParams, queryCourseParamsDto);
         System.out.println(courseBasePageResult);
+    }
+
+    @Test
+    void test(){
+        MoveType moveUp = MoveType.MOVE_UP;
+        String moveType = moveUp.getMoveType();
+        System.out.println(moveType);
     }
 
 }

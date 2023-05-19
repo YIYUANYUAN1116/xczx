@@ -2,19 +2,16 @@ package com.xuecheng.content.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.xuecheng.base.execption.CommonError;
 import com.xuecheng.base.execption.XueChengException;
 import com.xuecheng.base.model.PageParams;
 import com.xuecheng.base.model.PageResult;
-import com.xuecheng.content.mapper.CourseBaseMapper;
-import com.xuecheng.content.mapper.CourseCategoryMapper;
-import com.xuecheng.content.mapper.CourseMarketMapper;
+import com.xuecheng.content.mapper.*;
 import com.xuecheng.content.model.dto.AddCourseDto;
 import com.xuecheng.content.model.dto.CourseBaseInfoDto;
 import com.xuecheng.content.model.dto.EditCourseDto;
 import com.xuecheng.content.model.dto.QueryCourseParamsDto;
-import com.xuecheng.content.model.po.CourseBase;
-import com.xuecheng.content.model.po.CourseCategory;
-import com.xuecheng.content.model.po.CourseMarket;
+import com.xuecheng.content.model.po.*;
 import com.xuecheng.content.service.CourseBaseInfoService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -37,6 +34,12 @@ public class CourseBaseInfoServiceImpl implements CourseBaseInfoService {
 
     @Resource
     CourseCategoryMapper courseCategoryMapper;
+
+    @Resource
+    CourseTeacherMapper courseTeacherMapper;
+
+    @Resource
+    TeachplanMapper teachplanMapper;
 
     @Override
     public PageResult<CourseBase>    queryCourseBaseList(PageParams pageParams, QueryCourseParamsDto queryCourseParamsDto) {
@@ -199,5 +202,32 @@ public class CourseBaseInfoServiceImpl implements CourseBaseInfoService {
 
 
         return getCourseBaseInfo(courseId);
+    }
+
+    @Transactional
+    @Override
+    public void deleteCourseById(Long courseId) {
+        if (courseId<=0){
+            XueChengException.cast(CommonError.PARAMS_ERROR);
+        }
+        //[{"code":"202001","desc":"审核未通过"},{"code":"202002","desc":"未提交"},{"code":"202003","desc":"已提交"},{"code":"202004","desc":"审核通过"}]
+        CourseBase courseBase = courseBaseMapper.selectById(courseId);
+        if (courseBase.getAuditStatus().equals("202002")){
+            //1.删除课程信息
+            this.courseBaseMapper.deleteById(courseId);
+            //2.删除课程营销信息
+            courseMarketMapper.deleteById(courseId);
+            //3.删除课程计划
+            LambdaQueryWrapper<Teachplan> teachplanQueryWrapper = new LambdaQueryWrapper<>();
+            teachplanQueryWrapper.eq(Teachplan::getCourseId,courseId);
+            teachplanMapper.delete(teachplanQueryWrapper);
+            //4.删除课程教师
+            LambdaQueryWrapper<CourseTeacher> courseTeacherQueryWrapper = new LambdaQueryWrapper<>();
+            courseTeacherQueryWrapper.eq(CourseTeacher::getCourseId,courseId);
+            courseTeacherMapper.delete(courseTeacherQueryWrapper);
+        }else {
+            XueChengException.cast("未提交的课程才可以删除");
+        }
+
     }
 }

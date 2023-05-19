@@ -39,4 +39,14 @@ public interface TeachplanService extends IService<Teachplan> {
      * @param teachplanId
      */
     RestErrorResponse deleteTeachplanById(Long teachplanId);
+
+    /**
+     * 根据  teachplanId 和 moveType 移动课程计划
+     * 向上移动后和上边同级的课程计划交换位置，可以将两个课程计划的排序字段值进行交换。
+     * 向下移动后和下边同级的课程计划交换位置，可以将两个课程计划的排序字段值进行交换。
+     * @param teachplanId
+     * @param moveType
+     * @return
+     */
+    RestErrorResponse moveTeachplanById(Long teachplanId, String moveType);
 }
