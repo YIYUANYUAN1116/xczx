@@ -19,9 +19,6 @@ import java.io.IOException;
 
 /**
  * @description 媒资文件管理接口
- * @author Mr.M
- * @date 2022/9/6 11:29
- * @version 1.0
  */
  @Api(value = "媒资文件管理接口",tags = "媒资文件管理接口")
  @RestController
@@ -32,7 +29,10 @@ public class MediaFilesController {
   MediaFileService mediaFileService;
 
 
-
+  @GetMapping("/get")
+  public String test(){
+    return "123";
+  }
  @ApiOperation("媒资列表查询接口")
  @PostMapping("/files")
  public PageResult<MediaFiles> list(PageParams pageParams, @RequestBody QueryMediaParamsDto queryMediaParamsDto){
@@ -41,6 +41,7 @@ public class MediaFilesController {
 
  }
 
+ //http://localhost:8601/api/media/upload/coursefile
  @ApiOperation("上传文件")
  @RequestMapping(value = "/upload/coursefile",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
  @ResponseBody
@@ -61,6 +62,7 @@ public class MediaFilesController {
   //文件路径
   String absolutePath = tempFile.getAbsolutePath();
   //上传文件
-  return mediaFileService.uploadFile(companyId, uploadFileParamsDto, absolutePath);
+     UploadFileResultDto uploadFileResultDto = mediaFileService.uploadFile(companyId, uploadFileParamsDto, absolutePath);
+     return uploadFileResultDto;
  }
 }

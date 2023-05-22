@@ -1,11 +1,8 @@
-server:
-  servlet:
-    context-path: /system
-  port: 63110
 #微服务配置
 spring:
   application:
-    name: system-service
+    name: gateway
+
   cloud:
     nacos:
       server-addr: 123.60.189.149:8848
@@ -18,15 +15,10 @@ spring:
         file-extension: yaml
         refresh-enabled: true
         shared-configs:
-          - data-id: swagger-${spring.profiles.active}.yaml
-            group: xuecheng-plus-common
-            refresh: true
           - data-id: logging-${spring.profiles.active}.yaml
             group: xuecheng-plus-common
             refresh: true
-  #profiles默认为dev
+
+
   profiles:
     active: xc_dev
-
-
-

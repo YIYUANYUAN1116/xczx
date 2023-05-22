@@ -1,25 +1,19 @@
-import com.j256.simplemagic.ContentType;
 import com.xuecheng.media.mapper.MediaFilesMapper;
 import com.xuecheng.media.model.po.MediaFiles;
 import io.minio.MinioClient;
 import io.minio.RemoveObjectArgs;
 import io.minio.UploadObjectArgs;
-import io.minio.errors.*;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
-import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 
 @SpringBootTest
 public class MinioTest {
 
     static MinioClient minioClient =
             MinioClient.builder()
-                    .endpoint("123.60.189.149:9000")
+                    .endpoint("http://123.60.189.149:9000/")
                     .credentials("admin", "yzd20217551")
                     .build();
 
