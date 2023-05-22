@@ -138,6 +138,16 @@
             <artifactId>maven-site-plugin</artifactId>
             <version>3.3</version>
             <type>maven-plugin</type>
+            <exclusions>
+                <exclusion>
+                    <artifactId>servlet-api</artifactId>
+                    <groupId>javax.servlet</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>servlet-api</artifactId>
+                    <groupId>org.mortbay.jetty</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
