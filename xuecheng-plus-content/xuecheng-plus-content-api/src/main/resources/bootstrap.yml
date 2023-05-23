@@ -25,8 +25,11 @@ spring:
           - data-id: logging-${spring.profiles.active}.yaml
             group: xuecheng-plus-common
             refresh: true
-
   #profiles默认为dev
   profiles:
     active: xc_dev
+
+swagger:
+  base-package: com.xuecheng.content
+
 

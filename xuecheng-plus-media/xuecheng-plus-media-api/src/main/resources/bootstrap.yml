@@ -31,3 +31,10 @@ spring:
   profiles:
     active: xc_dev
 
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+swagger:
+  base-package: com.xuecheng.media
