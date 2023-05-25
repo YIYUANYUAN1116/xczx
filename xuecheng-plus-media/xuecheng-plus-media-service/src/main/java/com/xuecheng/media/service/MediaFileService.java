@@ -71,7 +71,7 @@ public interface MediaFileService {
   * @return com.xuecheng.base.model.RestResponse
   */
 
- RestResponse uploadChunk(String file, String fileMd5, int chunk);
+ RestResponse<Boolean> uploadChunk(String file, String fileMd5, int chunk);
 
  /**
   * @description 合并分块
@@ -83,5 +83,5 @@ public interface MediaFileService {
   * @author Mr.M
   * @date 2022/9/13 15:56
   */
- public RestResponse mergechunks(Long companyId,String fileMd5,int chunkTotal,UploadFileParamsDto uploadFileParamsDto);
+ RestResponse<Boolean> mergechunks(Long companyId,String fileMd5,int chunkTotal,UploadFileParamsDto uploadFileParamsDto);
 }

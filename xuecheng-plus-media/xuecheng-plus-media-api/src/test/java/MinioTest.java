@@ -50,7 +50,7 @@ public class MinioTest {
     @Test
     public void test_merge() throws Exception {
         List<ComposeSource> sources = Stream.iterate(0, i -> ++i)
-                .limit(6)
+                .limit(11)
                 .map(i -> ComposeSource.builder()
                         .bucket("test")
                         .object("chunk/".concat(Integer.toString(i)))
@@ -60,7 +60,9 @@ public class MinioTest {
         ComposeObjectArgs composeObjectArgs = ComposeObjectArgs
                 .builder()
                 .bucket("test")
-                .object("merge01.mp4").sources(sources).build();
+                .object("merge01.mp4")
+                .sources(sources)
+                .build();
         minioClient.composeObject(composeObjectArgs);
 
     }

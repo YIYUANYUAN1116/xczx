@@ -16,6 +16,8 @@ import com.xuecheng.media.model.po.MediaFiles;
 import com.xuecheng.media.service.MediaFileService;
 import io.minio.*;
 import io.minio.errors.*;
+import io.minio.messages.DeleteError;
+import io.minio.messages.DeleteObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.BeanUtils;
@@ -261,7 +263,7 @@ public class MediaFileServiceImpl implements MediaFileService {
     }
 
     @Override
-    public RestResponse uploadChunk(String file, String fileMd5, int chunk) {
+    public RestResponse uploadChunk(String filePath, String fileMd5, int chunk) {
         //得到分块文件的目录路径
         String chunkFileFolderPath = getChunkFileFolderPath(fileMd5);
         //得到分块文件的路径
@@ -269,7 +271,7 @@ public class MediaFileServiceImpl implements MediaFileService {
         //mimeType
         String mimeType = getMimeType(null);
         //将文件上传至minio
-        boolean b = addMediaFilesToMinIO(file, mimeType, bucket_VideoFiles, chunkFilePath);
+        boolean b = addMediaFilesToMinIO(filePath, mimeType, bucket_VideoFiles, chunkFilePath);
         if (!b) {
             log.debug("上传分块文件失败:{}", chunkFilePath);
             return RestResponse.validfail(false, "上传分块失败");
@@ -282,15 +284,15 @@ public class MediaFileServiceImpl implements MediaFileService {
     public RestResponse mergechunks(Long companyId, String fileMd5, int chunkTotal, UploadFileParamsDto uploadFileParamsDto) {
         //得到分块文件的目录路径
         String chunkFileFolderPath = getChunkFileFolderPath(fileMd5);
-        List<ComposeSource> collect = Stream.iterate(0, i -> ++i).limit(chunkTotal)
-                .map(i -> {
-                    ComposeSource build = ComposeSource.builder()
-                            .bucket(bucket_VideoFiles)
-                            .object(chunkFileFolderPath + i)
-                            .build();
-                    return build;
-                }).collect(Collectors.toList());
-
+        //组成将分块文件路径组成 List<ComposeSource>
+        List<ComposeSource> sourceObjectList = Stream.iterate(0, i -> ++i)
+                .limit(chunkTotal)
+                .map(i -> ComposeSource.builder()
+                        .bucket(bucket_VideoFiles)
+                        .object(chunkFileFolderPath.concat(Integer.toString(i)))
+                        .build())
+                .collect(Collectors.toList());
+//6/c/6cd51ff24c4c6045af965186aaf3db6d/chunk/
         //文件名称
         String fileName = uploadFileParamsDto.getFilename();
         //文件扩展名
@@ -299,11 +301,12 @@ public class MediaFileServiceImpl implements MediaFileService {
         String mergeFilePath = getFilePathByMd5(fileMd5, extName);
 
         try {
-            minioClient.composeObject(ComposeObjectArgs
-                    .builder()
-                    .sources(collect)
+            ComposeObjectArgs composeObjectArgs = ComposeObjectArgs.builder()
+                    .bucket(bucket_VideoFiles)
+                    .sources(sourceObjectList)
                     .object(mergeFilePath)
-                    .build());
+                    .build();
+            minioClient.composeObject(composeObjectArgs);
             log.debug("合并文件成功:{}",mergeFilePath);
         } catch (Exception e) {
         log.debug("合并文件失败,fileMd5:{},异常:{}",fileMd5,e.getMessage(),e);
@@ -354,6 +357,30 @@ public class MediaFileServiceImpl implements MediaFileService {
     }
 
     private void clearChunkFiles(String chunkFileFolderPath, int chunkTotal) {
+        try {
+            List<DeleteObject> deleteObject = Stream.iterate(0, i -> i++).limit(chunkTotal).map(i -> {
+                return new DeleteObject(chunkFileFolderPath.concat(String.valueOf(i)));
+            }).collect(Collectors.toList());
+
+            RemoveObjectsArgs removeObjectsArgs = RemoveObjectsArgs.builder()
+                    .bucket(bucket_VideoFiles)
+                    .objects(deleteObject).build();
+
+            Iterable<Result<DeleteError>> results = minioClient.removeObjects(removeObjectsArgs);
+            results.forEach(r->{
+                DeleteError deleteError = null;
+                try {
+                    deleteError = r.get();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    log.error("清除分块文件失败,objectname:{}",deleteError.objectName(),e);
+                }
+            });
+        }catch (Exception e){
+            e.printStackTrace();
+            log.error("清除分块文件失败,chunkFileFolderPath:{}",chunkFileFolderPath,e);
+        }
+
     }
 
     /**
@@ -367,8 +394,9 @@ public class MediaFileServiceImpl implements MediaFileService {
         File minioFile = null;
         FileOutputStream outputStream = null;
 
-        GetObjectArgs build = GetObjectArgs.builder().bucket(bucket_videoFiles).object(mergeFilePath).build();
         try {
+            //下载合并后的文件
+            GetObjectArgs build = GetObjectArgs.builder().bucket(bucket_videoFiles).object(mergeFilePath).build();
             InputStream stream = minioClient.getObject(build);
             //创建临时文件
             minioFile=File.createTempFile("minio", ".merge");
