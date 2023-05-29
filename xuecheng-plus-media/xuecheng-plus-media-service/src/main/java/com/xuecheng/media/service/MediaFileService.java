@@ -10,6 +10,7 @@ import com.xuecheng.media.model.po.MediaFiles;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.util.List;
 
 /**
@@ -84,4 +85,24 @@ public interface MediaFileService {
   * @date 2022/9/13 15:56
   */
  RestResponse<Boolean> mergechunks(Long companyId,String fileMd5,int chunkTotal,UploadFileParamsDto uploadFileParamsDto);
+
+
+ /**
+  * 下载文件
+  * @param bucket_videoFiles
+  * @param mergeFilePath
+  * @return
+  */
+  File downloadFileFromMinIO(String bucket_videoFiles, String mergeFilePath);
+
+
+ /**
+  *  文件上传到minio
+  * @param localFilePath
+  * @param mimeType
+  * @param bucket
+  * @param objectName
+  * @return
+  */
+  boolean addMediaFilesToMinIO(String localFilePath, String mimeType, String bucket, String objectName);
 }

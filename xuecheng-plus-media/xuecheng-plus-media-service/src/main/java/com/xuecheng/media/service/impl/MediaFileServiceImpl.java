@@ -9,10 +9,12 @@ import com.xuecheng.base.model.PageParams;
 import com.xuecheng.base.model.PageResult;
 import com.xuecheng.base.model.RestResponse;
 import com.xuecheng.media.mapper.MediaFilesMapper;
+import com.xuecheng.media.mapper.MediaProcessMapper;
 import com.xuecheng.media.model.dto.QueryMediaParamsDto;
 import com.xuecheng.media.model.dto.UploadFileParamsDto;
 import com.xuecheng.media.model.dto.UploadFileResultDto;
 import com.xuecheng.media.model.po.MediaFiles;
+import com.xuecheng.media.model.po.MediaProcess;
 import com.xuecheng.media.service.MediaFileService;
 import io.minio.*;
 import io.minio.errors.*;
@@ -52,6 +54,9 @@ public class MediaFileServiceImpl implements MediaFileService {
 
     @Autowired
     MediaFileService mediaFileService;
+
+    @Resource
+    MediaProcessMapper mediaProcessMapper;
 
     //普通文件桶
     @Value("${minio.bucket.files}")
@@ -112,8 +117,10 @@ public class MediaFileServiceImpl implements MediaFileService {
     }
 
 
+
     //文件上传到minio
-    private boolean addMediaFilesToMinIO(String localFilePath, String mimeType, String bucket, String objectName) {
+    @Override
+    public boolean addMediaFilesToMinIO(String localFilePath, String mimeType, String bucket, String objectName) {
         try {
             UploadObjectArgs.Builder builder = UploadObjectArgs.builder();
             if (!StringUtils.isEmpty(mimeType)) builder.contentType(mimeType);
@@ -199,10 +206,33 @@ public class MediaFileServiceImpl implements MediaFileService {
                 log.error("保存文件信息到数据库失败,{}",mediaFiles.toString());
                 XueChengException.cast("保存文件信息失败");
             }
+            //添加到待处理任务表
+            addWaitingTask(mediaFiles);
             log.debug("保存文件信息到数据库成功,{}",mediaFiles.toString());
 
         }
         return mediaFiles;
+    }
+
+    /**
+     * 添加待处理任务
+     * @param mediaFiles 媒资文件信息
+     */
+    private void addWaitingTask(MediaFiles mediaFiles) {
+
+        //文件名称
+        String filename = mediaFiles.getFilename();
+        //文件扩展名
+        String extension = filename.substring(filename.lastIndexOf("."));
+        //判断文件类型
+        String mimeType = getMimeType(extension);
+        if (mimeType.equals("video/x-msvideo")){
+            MediaProcess mediaProcess = new MediaProcess();
+            BeanUtils.copyProperties(mediaFiles,mediaProcess);
+            mediaProcess.setStatus("1");//未处理
+            mediaProcess.setFailCount(0);//失败次数默认为0
+            mediaProcessMapper.insert(mediaProcess);
+        }
     }
 
     @Override
@@ -216,7 +246,7 @@ public class MediaFileServiceImpl implements MediaFileService {
             GetObjectArgs getObjectArgs = GetObjectArgs.builder()
                     .bucket(bucket)
                     .object(filePath).build();
-            InputStream stream = null;
+            InputStream stream = null; //6/c/6cd51ff24c4c6045af965186aaf3db6d/6cd51ff24c4c6045af965186aaf3db6d.mp4
             try {
                 stream = minioClient.getObject(getObjectArgs);
                 if (stream != null) {
@@ -224,7 +254,15 @@ public class MediaFileServiceImpl implements MediaFileService {
                     return RestResponse.success(true);
                 }
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
+            } finally {
+                if (stream!=null){
+                    try {
+                        stream.close();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
             }
         }
         return RestResponse.success(false);
@@ -259,7 +297,7 @@ public class MediaFileServiceImpl implements MediaFileService {
     }
 
     private String getChunkFileFolderPath(String fileMd5) {
-        return fileMd5.substring(0, 1) + "/" + fileMd5.substring(1, 2) + "/" + fileMd5 + "/" + "chunk" + "/";
+        return fileMd5.charAt(0) + "/" + fileMd5.charAt(1) + "/" + fileMd5 + "/" + "chunk" + "/";
     }
 
     @Override
@@ -292,14 +330,17 @@ public class MediaFileServiceImpl implements MediaFileService {
                         .object(chunkFileFolderPath.concat(Integer.toString(i)))
                         .build())
                 .collect(Collectors.toList());
-//6/c/6cd51ff24c4c6045af965186aaf3db6d/chunk/
+        // 6/c/6cd51ff24c4c6045af965186aaf3db6d/chunk/0
+        // 6/c/6cd51ff24c4c6045af965186aaf3db6d/chunk/
+        // 6/c/6cd51ff24c4c6045af965186aaf3db6d/chunk/0
         //文件名称
         String fileName = uploadFileParamsDto.getFilename();
         //文件扩展名
         String extName = fileName.substring(fileName.lastIndexOf("."));
         //合并文件路径
         String mergeFilePath = getFilePathByMd5(fileMd5, extName);
-
+        // 6/c/6cd51ff24c4c6045af965186aaf3db6d/6cd51ff24c4c6045af965186aaf3db6d.mp4
+        // 6/c/6cd51ff24c4c6045af965186aaf3db6d/6cd51ff24c4c6045af965186aaf3db6d.mp4
         try {
             ComposeObjectArgs composeObjectArgs = ComposeObjectArgs.builder()
                     .bucket(bucket_VideoFiles)
@@ -389,7 +430,8 @@ public class MediaFileServiceImpl implements MediaFileService {
      * @param mergeFilePath
      * @return
      */
-    private File downloadFileFromMinIO(String bucket_videoFiles, String mergeFilePath) {
+    @Override
+    public File downloadFileFromMinIO(String bucket_videoFiles, String mergeFilePath) {
         //临时文件
         File minioFile = null;
         FileOutputStream outputStream = null;
@@ -402,6 +444,7 @@ public class MediaFileServiceImpl implements MediaFileService {
             minioFile=File.createTempFile("minio", ".merge");
             outputStream = new FileOutputStream(minioFile);
             IOUtils.copy(stream,outputStream);
+            log.debug("下载合并后文件成功,mergeFilePath:{}",mergeFilePath);
             return minioFile;
 
         } catch (Exception e) {
@@ -426,7 +469,7 @@ public class MediaFileServiceImpl implements MediaFileService {
      * @return
      */
     private String getFilePathByMd5(String fileMd5,String fileExt){
-        return   fileMd5.substring(0,1) + "/" + fileMd5.substring(1,2) + "/" + fileMd5 + "/" +fileMd5 +fileExt;
+        return   fileMd5.charAt(0) + "/" + fileMd5.charAt(1) + "/" + fileMd5 + "/" +fileMd5 +fileExt;
     }
 
 }

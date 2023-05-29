@@ -1,6 +1,7 @@
 package com.xuecheng.content.api;
 
 import com.xuecheng.base.execption.RestErrorResponse;
+import com.xuecheng.content.model.dto.BindTeachplanMediaDto;
 import com.xuecheng.content.model.dto.SaveTeachplanDto;
 import com.xuecheng.content.model.dto.TeachplanDto;
 import com.xuecheng.content.service.TeachplanService;
@@ -42,5 +43,17 @@ public class TeachPlanController {
     @PostMapping("/teachplan/{moveType}/{teachplanId}")
     public RestErrorResponse moveTeachplanById(@PathVariable Long teachplanId, @PathVariable String moveType){
         return teachplanService.moveTeachplanById(teachplanId,moveType);
+    }
+
+    @ApiOperation(value = "课程计划和媒资信息绑定")
+    @PostMapping("/teachplan/association/media")
+    public void associationMedia(@RequestBody BindTeachplanMediaDto bindTeachplanMediaDto){
+        teachplanService.associationMedia(bindTeachplanMediaDto);
+    }
+
+    @ApiOperation(value = "")
+    @DeleteMapping("/teachplan/association/media/{teachPlanId}/{mediaId}")
+    public void deleteAssociationMedia(@PathVariable("teachPlanId") Long teachPlanId,@PathVariable("mediaId") String mediaId){
+        teachplanService.deleteAssociationMedia(teachPlanId,mediaId);
     }
 }

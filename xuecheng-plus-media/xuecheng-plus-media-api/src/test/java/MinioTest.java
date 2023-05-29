@@ -19,7 +19,7 @@ public class MinioTest {
     static MinioClient minioClient =
             MinioClient.builder()
                     .endpoint("http://123.60.189.149:9000/")
-                    .credentials("admin", "yzd20217551")
+                    .credentials("admin", "yzd2021$$")
                     .build();
 
 
@@ -66,6 +66,30 @@ public class MinioTest {
         minioClient.composeObject(composeObjectArgs);
 
     }
+
+    //合并文件，要求分块文件最小5M
+    @Test
+    public void test_merge2() throws Exception {
+        ///
+        List<ComposeSource> sources = Stream.iterate(0, i -> ++i)
+                .limit(11)
+                .map(i -> ComposeSource.builder()
+                        .bucket("video")
+                        .object("6/c/6cd51ff24c4c6045af965186aaf3db6d/chunk/".concat(Integer.toString(i)))
+                        .build())
+                .collect(Collectors.toList());
+
+        ComposeObjectArgs composeObjectArgs = ComposeObjectArgs
+                .builder()
+                .bucket("video")
+                .object("6/c/6cd51ff24c4c6045af965186aaf3db6d/6cd51ff24c4c6045af965186aaf3db6d.mp4")
+                .sources(sources)
+                .build();
+        minioClient.composeObject(composeObjectArgs);
+
+    }
+
+
     //清除分块文件
     @Test
     public void test_removeObjects(){
