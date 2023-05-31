@@ -36,7 +36,7 @@ public interface MediaFileService {
   * @param localFilePath 文件磁盘路径
   * @return 文件信息
   */
- public UploadFileResultDto uploadFile(Long companyId, UploadFileParamsDto uploadFileParamsDto, String localFilePath);
+ public UploadFileResultDto uploadFile(Long companyId, UploadFileParamsDto uploadFileParamsDto, String localFilePath,String objectName,String folder);
 
  /**
   * 保存文件到DB

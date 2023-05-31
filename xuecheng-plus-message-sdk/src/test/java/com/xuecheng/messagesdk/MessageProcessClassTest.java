@@ -17,7 +17,7 @@ public class MessageProcessClassTest {
         System.out.println("开始执行-----》" + LocalDateTime.now());
         messageProcessClass.process(0, 1, "test", 5, 30);
         System.out.println("结束执行-----》" + LocalDateTime.now());
-        Thread.sleep(9000000);
+        Thread.sleep(10000);
     }
 
 }
