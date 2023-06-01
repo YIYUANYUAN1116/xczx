@@ -1,7 +1,6 @@
 package com.xuecheng.content.service.impl;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.xuecheng.base.execption.CommonError;
 import com.xuecheng.base.execption.XueChengException;
 import com.xuecheng.content.config.MultipartSupportConfig;
