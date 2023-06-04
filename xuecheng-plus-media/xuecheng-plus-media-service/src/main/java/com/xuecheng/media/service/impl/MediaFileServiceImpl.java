@@ -341,17 +341,13 @@ public class MediaFileServiceImpl implements MediaFileService {
                         .object(chunkFileFolderPath.concat(Integer.toString(i)))
                         .build())
                 .collect(Collectors.toList());
-        // 6/c/6cd51ff24c4c6045af965186aaf3db6d/chunk/0
-        // 6/c/6cd51ff24c4c6045af965186aaf3db6d/chunk/
-        // 6/c/6cd51ff24c4c6045af965186aaf3db6d/chunk/0
+
         //文件名称
         String fileName = uploadFileParamsDto.getFilename();
         //文件扩展名
         String extName = fileName.substring(fileName.lastIndexOf("."));
         //合并文件路径
         String mergeFilePath = getFilePathByMd5(fileMd5, extName);
-        // 6/c/6cd51ff24c4c6045af965186aaf3db6d/6cd51ff24c4c6045af965186aaf3db6d.mp4
-        // 6/c/6cd51ff24c4c6045af965186aaf3db6d/6cd51ff24c4c6045af965186aaf3db6d.mp4
         try {
             ComposeObjectArgs composeObjectArgs = ComposeObjectArgs.builder()
                     .bucket(bucket_VideoFiles)
@@ -376,6 +372,7 @@ public class MediaFileServiceImpl implements MediaFileService {
         try {
             fileInputStream = new FileInputStream(minioFile);
             String md5Hex = DigestUtils.md5DigestAsHex(fileInputStream);
+//            String md5Hex = org.apache.commons.codec.digest.DigestUtils.md5Hex(fileInputStream);
             //比较md5值，不一致则说明文件不完整
             if(!fileMd5.equals(md5Hex)){
                 return RestResponse.validfail(false, "文件合并校验失败，最终上传失败。");
@@ -410,7 +407,9 @@ public class MediaFileServiceImpl implements MediaFileService {
 
     private void clearChunkFiles(String chunkFileFolderPath, int chunkTotal) {
         try {
-            List<DeleteObject> deleteObject = Stream.iterate(0, i -> i++).limit(chunkTotal).map(i -> {
+            List<DeleteObject> deleteObject = Stream.iterate(0, i -> ++i)
+                    .limit(chunkTotal)
+                    .map(i -> {
                 return new DeleteObject(chunkFileFolderPath.concat(String.valueOf(i)));
             }).collect(Collectors.toList());
 
@@ -419,6 +418,7 @@ public class MediaFileServiceImpl implements MediaFileService {
                     .objects(deleteObject).build();
 
             Iterable<Result<DeleteError>> results = minioClient.removeObjects(removeObjectsArgs);
+
             results.forEach(r->{
                 DeleteError deleteError = null;
                 try {
