@@ -20,8 +20,7 @@ public class CourseOpenController {
 
     @Autowired
     private CoursePublishService coursePublishService;
-
-
+    //open/content/course/whole/1
     @GetMapping("/course/whole/{courseId}")
     public CoursePreviewDto getPreviewInfo(@PathVariable("courseId") Long courseId) {
         //获取课程预览信息
