@@ -6,9 +6,11 @@ import com.xuecheng.content.model.dto.CourseIndex;
 import com.xuecheng.media.model.dto.UploadFileResultDto;
 import feign.hystrix.FallbackFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
+@Component
 public class SearchServiceClientFallbackFactory implements FallbackFactory<SearchServiceClient> {
     @Override
     public SearchServiceClient create(Throwable throwable) {
