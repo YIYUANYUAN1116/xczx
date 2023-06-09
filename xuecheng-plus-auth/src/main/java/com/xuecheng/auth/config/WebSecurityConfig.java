@@ -23,6 +23,9 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 @EnableGlobalMethodSecurity(securedEnabled = true,prePostEnabled = true)
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
+    @Autowired
+    DaoAuthenticationProviderCustom daoAuthenticationProviderCustom;
+
 
 //    //配置用户信息服务
 //    @Bean
@@ -58,5 +61,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         return super.authenticationManagerBean();
     }
 
-
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.authenticationProvider(daoAuthenticationProviderCustom);
+    }
 }
