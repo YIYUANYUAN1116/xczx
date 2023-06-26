@@ -22,7 +22,7 @@ public class NumberLetterCheckCodeGenerator implements CheckCodeService.CheckCod
         Random random=new Random();
         StringBuffer sb=new StringBuffer();
         for(int i=0;i<length;i++){
-            int number=random.nextInt(36);
+            int number=random.nextInt(36); //nextInt 生产一个随机整数 [0,36)
             sb.append(str.charAt(number));
         }
         return sb.toString();
